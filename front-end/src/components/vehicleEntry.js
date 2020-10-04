@@ -157,7 +157,9 @@ class VehicleEntry extends React.Component {
             customer.firstDayDate = await getFirstDateTime();
 
             const res = await postCustomer(customer)
-
+            if(res[0] == 1){
+                console.log("Customer is Added")
+            }
             console.log("customer insertion Responce: ", res);
         } catch (error) {
             alert("Vehicle Entry Fail: " + error)

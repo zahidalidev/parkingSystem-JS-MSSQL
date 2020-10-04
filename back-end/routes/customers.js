@@ -97,77 +97,117 @@ router.post("/", async(req, res) => {
         await conn.connect();
         
         //quering
-        const request = new sql.Request(conn);
-        request.query(`select vehiclePrice from vehicles where vehicleType = '${req.body.vehicleType}'`, (err, vehiclesReponce) => {
-            if(err) {
+        const transaction = new sql.Transaction(conn);
+        const request = new sql.Request(transaction);
+
+        transaction.begin(tError => {
+            if(tError) {
                 conn.close();
-                return res.status(404).send("price for the vehicle not found");
+                return res.status(500).send("Error in Entry of Vehicle");
             }
             
-            //calues from request body
-            const SerialNumber = req.body.SerialNumber;
-            const vehicleNumber = req.body.vehicleNumber;
-            const entryTime = req.body.entryTime;
-            const firstDayDate = req.body.firstDayDate;
-            const image = req.body.image || null;
-            const customerType = req.body.customerType;
-            const vehicleType = req.body.vehicleType;
-            const vehiclePrice = customerType == "staff" ? 0 : vehiclesReponce.recordset[0].vehiclePrice
-            const branchID = req.body.branchID;
-            
-            request.query(
-                `insert into customers
-                    (cardSerial, vehicleNumber, entryDateTime, date, image, 
-                        customerType, vehicleType, vehiclePrice, branchID)
-                        values('${SerialNumber}', '${vehicleNumber}', convert(datetime, '${entryTime}' , 5),
-                        convert(date, '${entryTime}', 5), '${image}', '${customerType}', '${vehicleType}', 
-                    '${vehiclePrice}', ${branchID} )`, (error, customerResponce) => {
-                        if(err){ 
+            request.query(`select vehiclePrice from vehicles where vehicleType = '${req.body.vehicleType}'`, async(err, vehiclesReponce) => {
+                if(err) {
+                    conn.close();
+                    return res.status(404).send("price for the vehicle not found");
+                }
+                
+                //calues from request body
+                const SerialNumber = req.body.SerialNumber;
+                const vehicleNumber = req.body.vehicleNumber;
+                const entryTime = req.body.entryTime;
+                const firstDayDate = req.body.firstDayDate;
+                const image = req.body.image || null;
+                const customerType = req.body.customerType;
+                const vehicleType = req.body.vehicleType;
+                const vehiclePrice = customerType == "staff" ? 0 : vehiclesReponce.recordset[0].vehiclePrice
+                const branchID = req.body.branchID;
+                
+                request.query(`select customerID from customers where cardSerial = '${SerialNumber}' 
+                    and branchID = ${branchID} and exitDateTime is null`, async(cusExistErro, cusExistResponce) => {
+                        if(cusExistErro){ 
                             conn.close();
                             return res.status(404).send("customer is not added");
                         }
-
-                        
-                        request.query(`select * from summary where date = convert(date, '${firstDayDate}' , 5)`, (sError, sumSelRes) => {
-                            if(sError){ 
-                                conn.close();
-                                return res.status(404).send("customer is not added");
-                            }
-
-                            if(sumSelRes.recordset.length === 0){
-                                //insertion into summary table
-                                request.query(`insert into summary(date, totalSale, branchID) 
-                                values(convert(date, '${firstDayDate}' , 5), ${vehiclePrice}, ${branchID})`, (sInsErr, sInsResponce) => {
-                                    if(sInsErr){ 
+    
+                        if(cusExistResponce.recordset.length > 0){
+                            conn.close();
+                            return res.status(400).send("Bad Reqeuest: Serail Number Already Exist");
+                        }
+    
+                        request.query(
+                            `insert into customers
+                                (cardSerial, vehicleNumber, entryDateTime, date, image, 
+                                    customerType, vehicleType, vehiclePrice, branchID)
+                                    values('${SerialNumber}', '${vehicleNumber}', convert(datetime, '${entryTime}' , 5),
+                                    convert(date, '${entryTime}', 5), '${image}', '${customerType}', '${vehicleType}', 
+                                '${vehiclePrice}', ${branchID} )`, async(error, customerResponce) => {
+                                    
+                                    if(error){ 
                                         conn.close();
                                         return res.status(404).send("customer is not added");
                                     }
+            
+                                    
+                                    request.query(`select * from summary where date = convert(date, '${firstDayDate}' , 5) and branchID = ${branchID} `, async(sError, sumSelRes) => {
+                                        
+                                        if(sError){ 
+                                            await transaction.rollback();
 
-                                    conn.close();
-                                    return res.send(customerResponce.rowsAffected)
+                                            conn.close();
+                                            return res.status(404).send("customer is not added");
+                                        }
+            
+                                        if(sumSelRes.recordset.length === 0){
+                                            //insertion into summary table
+                                            request.query(`insert into summary(date, totalSale, branchID, totalEntries) 
+                                            values(convert(date, '${firstDayDate}' , 5), ${vehiclePrice}, ${branchID}, 1)`, async(sInsErr, sInsResponce) => {
+                                                
+                                                if(sInsErr){ 
+                                                    await transaction.rollback();
 
-                                })
+                                                    conn.close();
+                                                    return res.status(404).send("customer is not added");
+                                                }
+            
+                                                await transaction.commit();
 
-                            }else if(sumSelRes.recordset.length === 1){
-                                //updation in summary table
-                                request.query(`update summary set totalSale = totalSale + ${vehiclePrice} 
-                                where date = convert(date, '${firstDayDate}' , 5) and branchID = ${branchID}`, (sUpdaError, sUpdaResponce) => {
-                                    if(sUpdaError){ 
-                                        conn.close();
-                                        return res.status(404).send("customer is not added");
-                                    }
+                                                conn.close();
+                                                return res.send(customerResponce.rowsAffected)
+            
+                                            })
+            
+                                        }else if(sumSelRes.recordset.length === 1){
+                                            //updation in summary table
+                                            request.query(`update summary set totalSale = totalSale + ${vehiclePrice}, totalEntries = totalEntries + 1 
+                                            where date = convert(date, '${firstDayDate}' , 5) and branchID = ${branchID}`, async(sUpdaError, sUpdaResponce) => {
+                                                if(sUpdaError){ 
+                                                    await transaction.rollback();
 
-                                    conn.close();
-                                    return res.send(customerResponce.rowsAffected)
-                                })
-                            }
-                        })
-                    }
-            )
-        
+                                                    conn.close();
+                                                    return res.status(404).send("customer is not added");
+
+                                                }
+            
+                                                await transaction.commit();
+
+                                                conn.close();
+                                                return res.send(customerResponce.rowsAffected)
+                                            })
+                                        }
+                                    })
+                                }
+                        )
+    
+                    })
+    
+            
+            })
         })
 
+
     } catch (error) {
+        
         conn.close();
         return res.status(500).send(error)
     }

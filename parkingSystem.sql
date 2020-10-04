@@ -73,6 +73,7 @@ CREATE TABLE summary (
   summaryID INT NOT NULL IDENTITY,
   date date NOT NULL,
   totalSale int NULL,
+  totalEntries int NULL,
   branchID INT NOT NULL foreign key references branches(branchID),
   PRIMARY KEY (summaryID),
 )
