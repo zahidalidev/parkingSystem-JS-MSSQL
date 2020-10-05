@@ -4,12 +4,35 @@ const conn = require("../config/config");
 
 const router = express.Router();
 
+//generate symmary report 
+router.get("/summary/:date", async(req, res) => {
+    try {
+        const date = req.params.date; 
+        await conn.connect();
+        const request = new sql.Request(conn);
+        request.query(`select s.date, s.totalSale, s.totalEntries, concat(b.cityName, ' ',b.branchName) as branch
+         from summary s JOIN branches b on s.branchID = b.branchID where s.date = convert(date, '${date}', 5)`, (error, reportResponce) => {
+            if(error) {
+                conn.close();
+                return res.status(404).send("Report not found");
+            }
+
+            conn.close();
+            return res.send(reportResponce.recordset)
+        });
+        
+    } catch (error) {
+        conn.close();
+        return res.status(500).send(error)
+    }
+})
+
 //generate report 
 router.get("/report/:branchID/:date", async(req, res) => {
     try {
         const branchID = req.params.branchID;
-        const date = req.params.date; 
-        console.log(branchID, date)
+        const date = req.params.date;
+
         await conn.connect();
         const request = new sql.Request(conn);
         request.query(`select * from customers where branchID = ${branchID} and date = convert(date, '${date}', 5)`, (error, reportResponce) => {

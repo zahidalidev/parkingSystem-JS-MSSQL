@@ -1,4 +1,7 @@
 import React, { Component } from 'react';
+import {Route} from "react-router-dom";
+import jwt from "jsonwebtoken"
+import _ from "lodash"
 
 import ResponsiveDrawer from './appBar/appBar';
 import {getBranches, getAllEmployees} from "./http/api"
@@ -9,16 +12,34 @@ import Branches from './components/branches';
 import Login from "./components/login"
 import TodayReport from './components/todayReport';
 import DayOfMonthReport from './components/dayOfMonthReport';
+import MonthSummaryReport from './components/monthSummary';
+import AddStaffSerail from './components/staffSerial';
 
 
 class App extends Component {
   state = {
     branches: [],
     selectedBranchID: null,
-    allEmployees: []
+    allEmployees: [],
+    currentUser: {}
+  }
+
+  handleLogout = () => {
+    this.setState({currentUser: {}});
+  }
+
+  handleLogin = () => {
+    //setting current user that is currentlu logged in
+    const token = localStorage.getItem('token');
+    const currentUser = jwt.decode(token);
+    console.log(currentUser)
+    if(currentUser != null) this.setState({currentUser})
   }
 
   componentDidMount = async() => {
+    //setting current user that is currentlu logged in
+    this.handleLogin();
+
     try {
         //getting branches from server
         const {data: branches} = await getBranches();
@@ -90,23 +111,32 @@ class App extends Component {
   }
 
   render(){
-    const {branches, selectedBranchID, allEmployees} = this.state;
+    const {branches, selectedBranchID, allEmployees, currentUser} = this.state;
     return (
       <div className="App">
         <div className="container">
           <div className="row">
             <div className="col-md-1">
-              <ResponsiveDrawer onBranches = {branches} onHandleCurrentBranch = {this.handleCurrentBranch} />
+              <ResponsiveDrawer onHandleLogout = {this.handleLogout} onCurrentUser = {currentUser} onBranches = {branches} onHandleCurrentBranch = {this.handleCurrentBranch} />
             </div>
 
             <div style={{marginTop: 100}} className="col-md-11">
-              <VehicleEntry onSelectedBranchID={selectedBranchID} />
+              {
+                _.isEmpty(currentUser) ? <Route path="/" exact render={(props) => <Login {...props} onHandleLogin = {this.handleLogin} /> } /> : null
+              }
+              
+
+
+              {/* <VehicleEntry onSelectedBranchID={selectedBranchID} /> */}
               {/* <VehicleExit onSelectedBranchID={selectedBranchID} /> */}
               {/* <ManageEmployee onHandleDeleteEmployee = {this.handleDeleteEmployee} onHandleAddEmployee={this.handleAddEmployee} onAllEmployees = {allEmployees} onBranches = {branches} /> */}
               {/* <Branches onHandleAddBranch={this.handleAddBranch} onHandleDelteBranch = {this.handleDelteBranch} /> */}
-              {/* <Login  /> */}
               {/* <TodayReport onSelectedBranchID={selectedBranchID} /> */}
               {/* <DayOfMonthReport onSelectedBranchID={selectedBranchID} /> */}
+              {/* <MonthSummaryReport /> */}
+              {/* <AddStaffSerail /> */}
+
+
             </div>
 
           </div>

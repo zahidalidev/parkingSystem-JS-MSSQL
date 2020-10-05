@@ -257,6 +257,13 @@
     width: 1300px;
   }
   
+  .serailTable {
+    width: 44%;
+    background-color: #fff;
+    margin-left: 290px;
+    margin-top: 30px;
+  }
+
   table {
     width: 94%;
     background-color: #fff;

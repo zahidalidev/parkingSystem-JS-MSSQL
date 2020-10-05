@@ -1,27 +1,24 @@
 import React, { useEffect, useState } from 'react';
-
+import _ from "lodash";
 import PropTypes from 'prop-types';
 import AppBar from '@material-ui/core/AppBar';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import Divider from '@material-ui/core/Divider';
 import Drawer from '@material-ui/core/Drawer';
 import Hidden from '@material-ui/core/Hidden';
 import IconButton from '@material-ui/core/IconButton';
-import InboxIcon from '@material-ui/icons/MoveToInbox';
-import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
-import MailIcon from '@material-ui/icons/Mail';
 import MenuIcon from '@material-ui/icons/Menu';
 import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import CardMedia from '@material-ui/core/CardMedia';
-import LocationCityIcon from '@material-ui/icons/LocationCity';
-import DonutLargeIcon from '@material-ui/icons/DonutLarge';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
-
-import $ from "jquery";
+import LocalShippingIcon from '@material-ui/icons/LocalShipping';
+import DriveEtaIcon from '@material-ui/icons/DriveEta';
+import Button from "@material-ui/core/Button"
+import InputLabel from '@material-ui/core/InputLabel';
+import MenuItem from '@material-ui/core/MenuItem';
+import FormControl from '@material-ui/core/FormControl';
+import Select from '@material-ui/core/Select';
+import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 
 import colors from '../config/colors';
 import logo from "../assets/SuperParkingService.png"
@@ -100,53 +97,90 @@ function ResponsiveDrawer(props) {
   const [subBranches, setSubBranches] = useState([]);
   const [currentCityCss, setCurrentCityCss] = useState();
   const [currentBranchCss, setCurrentBranchCss] = useState();
+  const [currentUser, setCurrentUser] = useState({});
+  const [atBranch, setAtBranch] = useState(null);
 
 
   // like componentDidMount() in class
   useEffect(() => {
     setBranches(props.onBranches);
+    setCurrentUser(props.onCurrentUser);
   })
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const handleCityColor = (cityClass) => {
-    $(`.${currentCityCss}`).css("background-color", "");
-
-    $(`.${cityClass}`).css("background-color", colors.primary);
-    setCurrentCityCss(cityClass);
-  }
-
-  const handlebranchColor = (branchClass) => {
-    $(`.${currentBranchCss}`).css("background-color", "");
-
-    $(`.${branchClass}`).css("background-color", colors.darkGray);
-    setCurrentBranchCss(branchClass);
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    props.onHandleLogout();
   }
 
   const drawer = (
     <div style={{width: "100%", marginTop: 20}}>
       {/* render side bar buttons */}
-        {branches.map((text, index) => (
-          <ListItem className={`cityStyel${index}`} button key={text.cityName} onClick={() => {
-            setSubBranches(text.branches)
-            handleCityColor(`cityStyel${index}`);
-          }}>
-            <ListItemIcon style={{marginLeft: -10}}><LocationCityIcon style={{color: colors.white}} /></ListItemIcon>
-            <Typography style={{fontSize: 12, marginLeft: -27, marginTop: 5}} >{text.cityName.toUpperCase()}</Typography>
-          </ListItem>
-        ))}
 
-        {subBranches.map((subBranch, index) => (
-          <ListItem  className={`branchStyel${index}`} button key={subBranch.branchID} onClick={() => {
-            handlebranchColor(`branchStyel${index}`);
-            props.onHandleCurrentBranch(subBranch.branchID)
-          }} >
-            <ListItemIcon ><DonutLargeIcon fontSize="small" style={{color: colors.white}} /></ListItemIcon>
-            <Typography className={classes.subBranches} >{subBranch.branchName}</Typography>
-          </ListItem>
-        ))}
+        {/* Select City */}
+          <FormControl variant="filled" style={{minWidth: drawerWidth}}>
+            <InputLabel style={{color: "white"}} id="demo-simple-select-filled-label">Select City</InputLabel>
+            <Select
+                style={{color: "white"}}
+                labelId="demo-simple-select-filled-label"
+                id="demo-simple-select-filled"
+                onChange={(e) => {
+                  setSubBranches(e.target.value)
+                  setAtBranch(null)
+                }}
+            >
+                {branches.map((text, index) => (
+                  <MenuItem key={index} value={text.branches}>{text.cityName}</MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+
+        {/* Select Branch of City */}
+          <FormControl variant="filled" style={{minWidth: drawerWidth, marginTop: 10}}>
+            <InputLabel style={{color: "white"}} id="demo-simple-select-filled-label">Select Branch</InputLabel>
+            <Select
+                style={{color: "white"}}
+                labelId="demo-simple-select-filled-label"
+                id="demo-simple-select-filled"
+                onChange={(e) => {
+                  props.onHandleCurrentBranch(e.target.value);
+                  setAtBranch(true)
+                  console.log(e.target.value)
+                }}
+            >
+                {subBranches.map((subBranch, index) => (
+                  <MenuItem key={index} value={subBranch.branchID}>{subBranch.branchName}</MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+
+        {currentUser.roll === "employee" && atBranch != null ? 
+          <div style={{marginTop: 20}}>
+            <ListItem button >
+              <ListItemIcon ><LocalShippingIcon fontSize="small" style={{color: colors.white}} /></ListItemIcon>
+              <Button color="primary" variant="contained"  style={{marginLeft: -20, backgroundColor: colors.darkGray}} >ENTRY</Button>
+            </ListItem>
+            <ListItem button >
+              <ListItemIcon ><DriveEtaIcon fontSize="small" style={{color: colors.white}} /></ListItemIcon>
+              <Button color="primary" variant="contained" style={{marginLeft: -20, backgroundColor: colors.primary}} >EXIT</Button>
+            </ListItem>
+          </div>: null
+        }
+
+        {!_.isEmpty(currentUser) ? 
+          <div style={{bottom: 10, position: "fixed", bottom: "10px"}}>
+            <ListItem button >
+              <Button onClick={() => handleLogout() } color="primary" variant="contained" style={{marginLeft: -11, backgroundColor: colors.primary}} >
+                LOGOUT 
+                <ExitToAppIcon fontSize="small" style={{color: colors.white, marginLeft: 5}} />
+              </Button>
+            </ListItem>
+          </div>: null
+        }
+
     </div>
   );
   
@@ -172,40 +206,42 @@ function ResponsiveDrawer(props) {
         </Toolbar>
       </AppBar>
 
-      <nav className={classes.drawer} aria-label="mailbox folders">
-        {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
-        {/* for mobile */}
-        <Hidden smUp implementation="css">
-          <Drawer
-            container={container}
-            variant="temporary"
-            anchor={theme.direction === 'rtl' ? 'right' : 'left'}
-            open={mobileOpen}
-            onClose={handleDrawerToggle}
-            classes={{
-              paper: classes.drawerPaper,
-            }}
-            ModalProps={{
-              keepMounted: true, // Better open performance on mobile.
-            }}
-          >
-            {drawer}
-          </Drawer>
-        </Hidden>
-          {/* for windows */}
-        <Hidden xsDown implementation="css">
-          <Drawer
-            classes={{
-              paper: classes.drawerPaper,
-            }}
-            variant="permanent"
-            open
-          >
-            {drawer}
-          </Drawer>
-        </Hidden>
-        
-      </nav>
+      {_.isEmpty(currentUser) ? null :
+        <nav className={classes.drawer} aria-label="mailbox folders">
+          {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
+          {/* for mobile */}
+          <Hidden smUp implementation="css">
+            <Drawer
+              container={container}
+              variant="temporary"
+              anchor={theme.direction === 'rtl' ? 'right' : 'left'}
+              open={mobileOpen}
+              onClose={handleDrawerToggle}
+              classes={{
+                paper: classes.drawerPaper,
+              }}
+              ModalProps={{
+                keepMounted: true, // Better open performance on mobile.
+              }}
+            >
+              {drawer}
+            </Drawer>
+          </Hidden>
+            {/* for windows */}
+          <Hidden xsDown implementation="css">
+            <Drawer
+              classes={{
+                paper: classes.drawerPaper,
+              }}
+              variant="permanent"
+              open
+            >
+              {drawer}
+            </Drawer>
+          </Hidden>
+          
+        </nav>
+      }
     </div>
   );
 }

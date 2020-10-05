@@ -1,4 +1,3 @@
-import { TableBody } from "@material-ui/core";
 import axios from "axios";
 import http from "../config/http";
 import {customDate} from "./customDate";
@@ -6,6 +5,20 @@ import {customDate} from "./customDate";
 const endPoint = http.apiEndPoint;
 const dataTimeEndPoint = http.dataTimeEndPoint;
 
+
+                              //manage Serial Numbers
+
+//getting Serial Numbers
+export const getSerialNumbers = async() => {
+  const data = await axios.get(`${endPoint}/serailNumbers`)
+  return data;
+}
+
+//adding Serial Number
+export const addSerialNumber = async(serial) => {
+  const data = await axios.post(`${endPoint}/serailNumbers/${serial}`);
+  return data;
+}
 
                               //manage branches
 //getting all branches
@@ -38,6 +51,11 @@ export const updateBranch = async(id, body) => {
   return data;
 }
                               //manage customers and reports
+
+export const getMonthSummaryReport = async(date) => {
+  const data = await axios.get(`${endPoint}/customers/summary/${date}`);
+  return data;
+}
 
 export const getTodayReport = async(id) => {
   const date = await getDateTime();

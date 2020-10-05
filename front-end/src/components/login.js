@@ -25,6 +25,10 @@ class Login extends Component{
             const {data} = await getEmployeeLogin(employeeDetails.empUserName, employeeDetails.empPassword);
             localStorage.setItem("token", data);
             alert("logged in")
+
+            //refereshing page
+            // window.location.reload(false)
+            this.props.onHandleLogin();
         } catch (error) {
             if(error.message == "Network Error"){
                 alert("Error: Network Error")
@@ -44,8 +48,8 @@ class Login extends Component{
                     height: "102%",
                     justifyContent: "center",
                     boxShadow: `2px 2px 5px 5px ${colors.darkGray}`,
-                    marginLeft: 70,
-                    marginTop: -10,
+                    marginLeft: 10,
+                    marginTop: 20,
                 }}>
                     <div className="row" style={{justifyContent: "center", marginTop: 40}}>
                         <h2 style={{marginTop: 80, marginBottom: 50,fontWeight: "bold", color: colors.primary}} >Login</h2>
