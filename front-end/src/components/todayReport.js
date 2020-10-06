@@ -6,13 +6,20 @@ import {dBToJSCustomDate} from "../http/customDate";
 import colors from "../config/colors";
 import "./tableReport.css"
 
+let unMount = true; //to stop request when component Unmount
 class TodayReport extends Component{
     state = {
-        report: []
+        report: [],
+    }
+
+    componentWillUnmount = () => {
+        unMount = false;
     }
 
     componentDidMount = async() => {
         //on mounting component
+        unMount = true;
+
         try {
             const {data} = await getTodayReport(this.props.onSelectedBranchID);
             data.map((customer) => {
@@ -22,7 +29,7 @@ class TodayReport extends Component{
             this.setState({report: data})
         } catch (error) {
             if(error.message == "Network Error"){
-                alert("Error: Network Error")
+                alert("Error: Day Report Network Error")
             }else{
                 alert("Error: " + error.response.data)
             }
@@ -32,20 +39,24 @@ class TodayReport extends Component{
         var rule = new schedule.RecurrenceRule();
         rule.second = [0, 10, 20, 30, 40, 50, 59];
         schedule.scheduleJob(rule, async() => {
-            try {
-                const {data} = await getTodayReport(this.props.onSelectedBranchID);
-                data.map((customer) => {
-                    customer.entryDateTime = dBToJSCustomDate(customer.entryDateTime)
-                    customer.exitDateTime = customer.exitDateTime == null ? customer.exitDateTime : dBToJSCustomDate(customer.exitDateTime);
-                })
-                this.setState({report: data})
-            } catch (error) {
-                if(error.message == "Network Error"){
-                    alert("Error: Network Error")
-                }else{
-                    alert("Error: " + error.response.data)
+            
+            if(unMount){    //to stop when component will unMount
+                try {
+                    const {data} = await getTodayReport(this.props.onSelectedBranchID);
+                    data.map((customer) => {
+                        customer.entryDateTime = dBToJSCustomDate(customer.entryDateTime)
+                        customer.exitDateTime = customer.exitDateTime == null ? customer.exitDateTime : dBToJSCustomDate(customer.exitDateTime);
+                    })
+                    this.setState({report: data})
+                } catch (error) {
+                    if(error.message == "Network Error"){
+                        alert("Error: Day Report Network Error")
+                    }else{
+                        alert("Error: " + error.response.data)
+                    }
                 }
             }
+
         });
     }
 
@@ -79,7 +90,7 @@ class TodayReport extends Component{
                                     </thead>
                                     <tbody>
                                       {report.map((customer, i) => (
-                                        <tr className={customer.exitDateTime == null ? "row100 condColor" : "row100"} >
+                                        <tr key={i} className={customer.exitDateTime == null ? "row100 condColor" : "row100"} >
                                             <th style = {{color: "white", border:"2px solid #842335"}} className=" hoverClass column100 column2" data-column="column2">{i+1}</th>
                                             <td style={{border:"2px solid #842335"}} className="column100  column3" data-column="column3">{customer.customerID}</td>
                                             <td style={{border:"2px solid #842335"}} className="column100  column4" data-column="column4">{customer.cardSerial}</td>

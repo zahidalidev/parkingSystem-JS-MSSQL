@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Route} from "react-router-dom";
+import {Route, Redirect} from "react-router-dom";
 import jwt from "jsonwebtoken"
 import _ from "lodash"
 
@@ -25,7 +25,7 @@ class App extends Component {
   }
 
   handleLogout = () => {
-    this.setState({currentUser: {}});
+    this.setState({currentUser: {}, selectedBranchID: null});
   }
 
   handleLogin = () => {
@@ -121,22 +121,48 @@ class App extends Component {
             </div>
 
             <div style={{marginTop: 100}} className="col-md-11">
+
+              {/* handling login component */}
               {
                 _.isEmpty(currentUser) ? <Route path="/" exact render={(props) => <Login {...props} onHandleLogin = {this.handleLogin} /> } /> : null
               }
               
+              {/* handling vehicle entry and exit components */}
+              {!_.isEmpty(currentUser) && selectedBranchID != null ?
+                <>
+                  <Route path="/home/city/branch/entry" exact render={(props) => <VehicleEntry {...props} onSelectedBranchID={selectedBranchID} />} />
+                  <Route path="/home/city/branch/exit" exact render={(props) => <VehicleExit {...props} onSelectedBranchID={selectedBranchID} /> } />
+                </>
+                : null
+              }
 
+              {/* hadnling current active report for super visor and admin */}
+              {
+                (currentUser.roll == "super Visor" || currentUser.roll == "admin") && selectedBranchID != null ?
+                  <Route path="/home/city/branch/currentreport" exact render={(props) =>  <TodayReport {...props} onSelectedBranchID={selectedBranchID} /> } /> 
+                : null
+              }
 
-              {/* <VehicleEntry onSelectedBranchID={selectedBranchID} /> */}
-              {/* <VehicleExit onSelectedBranchID={selectedBranchID} /> */}
-              {/* <ManageEmployee onHandleDeleteEmployee = {this.handleDeleteEmployee} onHandleAddEmployee={this.handleAddEmployee} onAllEmployees = {allEmployees} onBranches = {branches} /> */}
-              {/* <Branches onHandleAddBranch={this.handleAddBranch} onHandleDelteBranch = {this.handleDelteBranch} /> */}
-              {/* <TodayReport onSelectedBranchID={selectedBranchID} /> */}
-              {/* <DayOfMonthReport onSelectedBranchID={selectedBranchID} /> */}
-              {/* <MonthSummaryReport /> */}
-              {/* <AddStaffSerail /> */}
-
-
+              {/* handling summary of month in year and other admin rolls where Branch ID is not required*/}
+              {
+                currentUser.roll == "admin" ?
+                <>
+                  <Route path="/home/summaryreport" exact render={(props) => <MonthSummaryReport {...props} /> } />
+                  <Route path="/home/branches" exact render={(props) => <Branches {...props} onHandleAddBranch={this.handleAddBranch} onHandleDelteBranch = {this.handleDelteBranch} /> } />
+                  <Route path="/home/employee" exact render={(props) => <ManageEmployee {...props} onHandleDeleteEmployee = {this.handleDeleteEmployee} onHandleAddEmployee={this.handleAddEmployee} onAllEmployees = {allEmployees} onBranches = {branches} /> } />
+                  <Route path="/home/staffemployeeserial" exact render={(props) => <AddStaffSerail {...props} /> } />
+                </>
+                :null
+              }
+              
+              {/* handling day of month report component here current branch ID is required */}
+              {
+                currentUser.roll == "admin" && selectedBranchID != null ?
+                <Route path="/home/dayodmonthreport" exact render={(props) => <DayOfMonthReport {...props} onSelectedBranchID={selectedBranchID} /> } />
+                : null
+              }
+             
+              <Redirect to="/" />
             </div>
 
           </div>

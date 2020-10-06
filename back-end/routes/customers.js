@@ -61,7 +61,8 @@ router.get("/customerDetails/:branchID/:serialNumber", async(req, res) => {
         const branchID = req.params.branchID;
         const cardSerialNumber = req.params.serialNumber;
         
-        request.query(`select * from customers where branchID = ${branchID} and cardSerial = '${cardSerialNumber}'`, (error, customerReponce) => {
+        request.query(`select * from customers where branchID = ${branchID} and cardSerial = '${cardSerialNumber}' 
+                    and exitDateTime is NULL`, (error, customerReponce) => {
             if(error) {
                 conn.close();
                 return res.status(404).send("Customer with this serail number not found");
@@ -79,7 +80,6 @@ router.get("/customerDetails/:branchID/:serialNumber", async(req, res) => {
 
 //updating customer with branchID and serialNumber setting exit time
 router.put("/:id", async(req, res) => {
-    
     try {
         await conn.connect();
         
@@ -93,12 +93,13 @@ router.put("/:id", async(req, res) => {
         const exitDateTime = req.body.exitDateTime ; 
 
         request.query(`update customers set exitDateTime = convert(datetime, '${exitDateTime}' , 5),
-                        image = "null", where customerID = ${customerID} and branchID = ${branchID} and 
+                        image = 'null' where customerID = ${customerID} and branchID = ${branchID} and 
                         entryDateTime = convert(datetime, '${entryDateTime}' , 5) and  cardSerial = '${cardSerial}' and 
                         exitDateTime is null`, 
                         (error, customerReponce) => {
                             
                             if(error){ 
+                                console.log(error)
                                 conn.close();
                                 return res.status(404).send("Customer with this serail number not found");
                             }

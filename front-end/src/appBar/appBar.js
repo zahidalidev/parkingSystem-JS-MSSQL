@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import _ from "lodash";
+import {useHistory} from "react-router"
 import PropTypes from 'prop-types';
 import AppBar from '@material-ui/core/AppBar';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -95,11 +96,9 @@ function ResponsiveDrawer(props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [branches, setBranches] = useState([]);
   const [subBranches, setSubBranches] = useState([]);
-  const [currentCityCss, setCurrentCityCss] = useState();
-  const [currentBranchCss, setCurrentBranchCss] = useState();
   const [currentUser, setCurrentUser] = useState({});
   const [atBranch, setAtBranch] = useState(null);
-
+  const history = useHistory();
 
   // like componentDidMount() in class
   useEffect(() => {
@@ -113,6 +112,8 @@ function ResponsiveDrawer(props) {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    setAtBranch(null)
+    history.push("/");
     props.onHandleLogout();
   }
 
@@ -157,19 +158,63 @@ function ResponsiveDrawer(props) {
             </Select>
           </FormControl>
 
+        {/* select Entry or Exit For vehicle, only for employee */}
         {currentUser.roll === "employee" && atBranch != null ? 
           <div style={{marginTop: 20}}>
             <ListItem button >
               <ListItemIcon ><LocalShippingIcon fontSize="small" style={{color: colors.white}} /></ListItemIcon>
-              <Button color="primary" variant="contained"  style={{marginLeft: -20, backgroundColor: colors.darkGray}} >ENTRY</Button>
+              <Button onClick={() => history.push("/home/city/branch/entry")} color="primary" variant="contained" style={{marginLeft: -20, backgroundColor: colors.darkGray}} >ENTRY</Button>
             </ListItem>
             <ListItem button >
               <ListItemIcon ><DriveEtaIcon fontSize="small" style={{color: colors.white}} /></ListItemIcon>
-              <Button color="primary" variant="contained" style={{marginLeft: -20, backgroundColor: colors.primary}} >EXIT</Button>
+              <Button onClick={() => history.push("/home/city/branch/exit")} color="primary" variant="contained" style={{marginLeft: -20, backgroundColor: colors.primary}} >EXIT</Button>
             </ListItem>
           </div>: null
         }
 
+        {/* select today's current report of branch component, for admin and super visor */}
+        {(currentUser.roll === "super Visor" || currentUser.roll === "admin") && atBranch != null ? 
+          <div style={{marginTop: 30, marginLeft: 5}}>
+              <Button onClick={() => history.push("/home/city/branch/currentreport")} color="primary" variant="contained" style={{backgroundColor: colors.sideBarButton, whiteSpace: "nowrap", width: drawerWidth - 12, fontSize: 12}} >Today Report</Button>
+          </div>: null
+        }
+
+        {/* select day report of month component */}
+        {(currentUser.roll === "admin") && atBranch != null ? 
+          <div style={{marginTop: 30, marginLeft: 5}}>
+              <Button onClick={() => history.push("/home/dayodmonthreport")} color="primary" variant="contained" style={{backgroundColor: colors.sideBarButton, whiteSpace: "nowrap", width: drawerWidth - 12, fontSize: 12}} >Month Report</Button>
+          </div>: null
+        }
+
+        {/* select summary report of year component */}
+        {currentUser.roll === "admin" ? 
+          <div style={{marginTop: 30, marginLeft: 5}}>
+              <Button onClick={() => history.push("/home/summaryreport")} color="primary" variant="contained" style={{backgroundColor: colors.sideBarButton, whiteSpace: "nowrap", width: drawerWidth - 12, fontSize: 12}} >Summary Rep</Button>
+          </div>: null
+        }
+
+        {/* select branches component */}
+        {currentUser.roll === "admin" ? 
+          <div style={{marginTop: 30, marginLeft: 5}}>
+              <Button onClick={() => history.push("/home/branches")} color="primary" variant="contained" style={{backgroundColor: colors.sideBarButton, whiteSpace: "nowrap", width: drawerWidth - 12, fontSize: 12}} >Branches</Button>
+          </div>: null
+        }
+
+        {/* select employee component */}
+        {currentUser.roll === "admin" ? 
+          <div style={{marginTop: 30, marginLeft: 5}}>
+              <Button onClick={() => history.push("/home/employee")} color="primary" variant="contained" style={{backgroundColor: colors.sideBarButton, whiteSpace: "nowrap", width: drawerWidth - 12, fontSize: 12}} >Employees</Button>
+          </div>: null
+        }
+
+        {/* select staffEmployee Serial component */}
+        {currentUser.roll === "admin" ? 
+          <div style={{marginTop: 30, marginLeft: 5}}>
+              <Button onClick={() => history.push("/home/staffemployeeserial")} color="primary" variant="contained" style={{backgroundColor: colors.sideBarButton, whiteSpace: "nowrap", width: drawerWidth - 12, fontSize: 12}} >Emp Serial No.</Button>
+          </div>: null
+        }
+
+        {/* handling logout button */}
         {!_.isEmpty(currentUser) ? 
           <div style={{bottom: 10, position: "fixed", bottom: "10px"}}>
             <ListItem button >

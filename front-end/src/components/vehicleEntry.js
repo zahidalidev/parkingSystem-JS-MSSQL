@@ -156,13 +156,17 @@ class VehicleEntry extends React.Component {
             customer.entryTime = await getDateTime();
             customer.firstDayDate = await getFirstDateTime();
 
-            const res = await postCustomer(customer)
+            const {data: res} = await postCustomer(customer)
             if(res[0] == 1){
                 console.log("Customer is Added")
             }
             console.log("customer insertion Responce: ", res);
         } catch (error) {
-            alert("Vehicle Entry Fail: " + error)
+            if(error.message == "Network Error"){
+                alert("Error: Network Error")
+            }else{
+                alert("Error: " + error.response.data)
+            }
         }
     }
 

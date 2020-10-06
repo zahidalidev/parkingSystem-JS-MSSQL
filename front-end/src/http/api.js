@@ -70,7 +70,7 @@ export const getDayOfMOnthReport = async(id, date) => {
 
 //posting customer data
 export const postCustomer = async(body) => {
-    const {data} = await axios.post(`${endPoint}/customers`, body);
+    const data = await axios.post(`${endPoint}/customers`, body);
     return data;
 }
 
